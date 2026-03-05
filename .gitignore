@@ -1,0 +1,4 @@
+node_modules/
+downloads/
+*.part
+fix_download.js
