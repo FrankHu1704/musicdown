@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MusicDown — Download de Músicas & Vídeos</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--neon:#00f5ff;--neon2:#7b2fff;--neon3:#ff006e;--dark:#020811;--dark2:#060f1e;--dark3:#0a1628;--text:#e0f0ff;--muted:#6a8fa8;--border:rgba(0,245,255,.12);--success:#00ff88;--danger:#ff4466;--warning:#ffaa00}
+body{background:var(--dark);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,245,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,.025) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:0}
+nav{background:rgba(2,8,17,.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 5%;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+.logo{font-family:'Orbitron',monospace;font-size:1.3rem;font-weight:900;color:var(--neon)}.logo span{color:var(--neon2)}
+.nav-badge{background:rgba(0,245,255,.08);border:1px solid rgba(0,245,255,.2);color:var(--neon);padding:4px 14px;border-radius:20px;font-size:.7rem;letter-spacing:2px}
+.hero{padding:60px 5% 40px;text-align:center;position:relative;z-index:1}
+.hero-glow{position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(123,47,255,.1),transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.hero h1{font-family:'Orbitron',monospace;font-size:clamp(1.6rem,4vw,3rem);font-weight:900;line-height:1.2;margin-bottom:12px}
+.hero h1 span{background:linear-gradient(135deg,var(--neon),var(--neon2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--muted);font-size:.95rem;max-width:500px;margin:0 auto 28px;line-height:1.7}
+.platforms{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:32px}
+.platform{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:.75rem;color:var(--muted)}
+
+/* MAIN */
+.main{max-width:780px;margin:0 auto;padding:0 5%;position:relative;z-index:1}
+
+/* SEARCH BOX */
+.search-box{background:rgba(6,15,30,.95);border:1px solid var(--border);border-radius:20px;padding:28px;margin-bottom:20px;backdrop-filter:blur(20px)}
+.search-tabs{display:flex;background:rgba(255,255,255,.04);border-radius:10px;padding:3px;margin-bottom:18px;gap:3px}
+.search-tab{flex:1;padding:9px;border:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:.85rem;letter-spacing:1px;cursor:pointer;border-radius:8px;transition:all .3s;text-align:center}
+.search-tab.active{background:linear-gradient(135deg,var(--neon2),var(--neon));color:var(--dark);font-weight:700}
+.input-row{display:flex;gap:10px}
+.main-input{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;padding:13px 18px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:.95rem;outline:none;transition:all .3s}
+.main-input:focus{border-color:var(--neon);background:rgba(0,245,255,.03)}
+.main-input::placeholder{color:var(--muted)}
+.btn-main{background:linear-gradient(135deg,var(--neon),var(--neon2));border:none;border-radius:12px;padding:13px 22px;color:var(--dark);font-family:'Orbitron',monospace;font-size:.75rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .3s;white-space:nowrap}
+.btn-main:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,245,255,.3)}
+.btn-main:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* SEARCH RESULTS */
+.search-results{margin-top:16px;display:none}
+.search-results.show{display:block}
+.search-result-item{display:flex;gap:12px;padding:12px;border-radius:12px;cursor:pointer;transition:all .3s;border:1px solid transparent;margin-bottom:8px;background:rgba(255,255,255,.02)}
+.search-result-item:hover{border-color:rgba(0,245,255,.2);background:rgba(0,245,255,.04)}
+.search-result-item.selected{border-color:var(--neon);background:rgba(0,245,255,.07)}
+.sr-thumb{width:80px;height:54px;border-radius:8px;object-fit:cover;flex-shrink:0;background:var(--dark3)}
+.sr-info{flex:1;min-width:0}
+.sr-title{font-size:.9rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+.sr-meta{font-size:.75rem;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.sr-views{color:var(--warning);font-size:.72rem}
+
+/* MUSIC INFO CARD */
+.music-card{background:rgba(6,15,30,.95);border:1px solid var(--border);border-radius:20px;padding:24px;margin-bottom:16px;display:none;backdrop-filter:blur(20px)}
+.music-card.show{display:block}
+.music-card-top{display:flex;gap:18px;align-items:flex-start;margin-bottom:20px}
+.music-cover{width:120px;height:120px;border-radius:14px;object-fit:cover;border:2px solid var(--border);flex-shrink:0;background:var(--dark3)}
+.music-cover-placeholder{width:120px;height:120px;border-radius:14px;background:linear-gradient(135deg,var(--dark2),var(--neon2));display:flex;align-items:center;justify-content:center;font-size:2.8rem;flex-shrink:0}
+.music-title{font-family:'Orbitron',monospace;font-size:1rem;font-weight:900;margin-bottom:6px;color:var(--text);line-height:1.3}
+.music-artist{font-size:.88rem;color:var(--muted);margin-bottom:10px}
+.music-tags{display:flex;gap:8px;flex-wrap:wrap}
+.music-tag{background:rgba(0,245,255,.08);border:1px solid rgba(0,245,255,.15);color:var(--neon);padding:3px 10px;border-radius:12px;font-size:.7rem;font-family:'Orbitron',monospace}
+
+/* AUDIO PREVIEW */
+.preview-box{background:rgba(0,245,255,.04);border:1px solid rgba(0,245,255,.15);border-radius:12px;padding:14px;margin-bottom:16px;display:none}
+.preview-box.show{display:block}
+.preview-title{font-size:.72rem;color:var(--neon);letter-spacing:2px;font-family:'Orbitron',monospace;margin-bottom:10px}
+.preview-player{width:100%;height:36px;border-radius:8px;accent-color:var(--neon)}
+audio{width:100%;border-radius:8px}
+audio::-webkit-media-controls-panel{background:rgba(0,245,255,.05)}
+
+/* FORMAT */
+.format-row{display:flex;gap:8px;margin-bottom:16px}
+.format-btn{flex:1;padding:12px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:.88rem;cursor:pointer;transition:all .3s;text-align:center}
+.format-btn:hover{border-color:rgba(0,245,255,.3)}
+.format-btn.active{border-color:var(--neon);background:rgba(0,245,255,.1);color:var(--neon);font-weight:700}
+
+/* QUALITY */
+.quality-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.quality-btn{padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--muted);font-family:'Orbitron',monospace;font-size:.72rem;cursor:pointer;transition:all .3s}
+.quality-btn:hover{border-color:rgba(0,245,255,.3)}
+.quality-btn.active{border-color:var(--neon);background:rgba(0,245,255,.1);color:var(--neon)}
+
+/* PROGRESS */
+.progress-card{background:rgba(6,15,30,.95);border:1px solid var(--border);border-radius:16px;padding:22px;margin-bottom:16px;display:none}
+.progress-card.show{display:block}
+.prog-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.prog-title{font-family:'Orbitron',monospace;font-size:.8rem;color:var(--neon);letter-spacing:2px}
+.prog-pct{font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:900;color:var(--neon)}
+.prog-bar{height:10px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden;margin-bottom:10px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--neon2),var(--neon));border-radius:5px;width:0;transition:width .4s}
+.prog-status{font-size:.8rem;color:var(--muted);text-align:center}
+.prog-speed{font-size:.75rem;color:var(--warning);text-align:center;margin-top:4px}
+
+/* DOWNLOAD BTN */
+.btn-download{width:100%;background:linear-gradient(135deg,var(--success),#00cc66);border:none;border-radius:12px;padding:15px;color:var(--dark);font-family:'Orbitron',monospace;font-size:.85rem;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .3s;margin-bottom:16px;display:none}
+.btn-download.show{display:block}
+.btn-download:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,255,136,.3)}
+.btn-download:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+/* RESULT */
+.result-card{background:rgba(0,255,136,.04);border:1px solid rgba(0,255,136,.2);border-radius:16px;padding:22px;margin-bottom:16px;display:none;text-align:center}
+.result-card.show{display:block}
+.result-icon{font-size:2.5rem;margin-bottom:10px}
+.result-title{font-family:'Orbitron',monospace;font-size:.85rem;color:var(--success);letter-spacing:2px;margin-bottom:6px}
+.result-sub{color:var(--muted);font-size:.85rem;margin-bottom:18px}
+.btn-save{display:inline-block;background:linear-gradient(135deg,var(--success),#00cc66);border:none;border-radius:10px;padding:13px 32px;color:var(--dark);font-family:'Orbitron',monospace;font-size:.8rem;font-weight:700;letter-spacing:2px;cursor:pointer;text-decoration:none;transition:all .3s}
+.btn-save:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,255,136,.3)}
+.btn-new{background:rgba(0,245,255,.1);border:1px solid rgba(0,245,255,.3);color:var(--neon);border-radius:10px;padding:10px 22px;font-family:'Orbitron',monospace;font-size:.75rem;cursor:pointer;transition:all .3s;margin-left:10px}
+.btn-new:hover{background:rgba(0,245,255,.2)}
+
+/* ERROR */
+.error-box{background:rgba(255,68,102,.05);border:1px solid rgba(255,68,102,.2);border-radius:10px;padding:13px 16px;color:var(--danger);font-size:.88rem;display:none;margin-bottom:14px}
+.error-box.show{display:block}
+
+/* HISTORY */
+.history-section{max-width:780px;margin:28px auto 60px;padding:0 5%;position:relative;z-index:1}
+.section-title{font-family:'Orbitron',monospace;font-size:.82rem;color:var(--neon);letter-spacing:2px;margin-bottom:14px}
+.history-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.history-item{background:rgba(6,15,30,.9);border:1px solid var(--border);border-radius:12px;padding:14px;transition:all .3s;cursor:pointer}
+.history-item:hover{border-color:rgba(0,245,255,.25);transform:translateY(-2px)}
+.hi-thumb{width:100%;height:90px;border-radius:8px;object-fit:cover;margin-bottom:10px;background:var(--dark3)}
+.hi-title{font-size:.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+.hi-meta{font-size:.72rem;color:var(--muted)}
+
+/* FEATURES */
+.features-section{max-width:900px;margin:40px auto;padding:0 5%;position:relative;z-index:1}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.feat-card{background:rgba(6,15,30,.8);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;transition:all .3s}
+.feat-card:hover{border-color:rgba(0,245,255,.25);transform:translateY(-3px)}
+.feat-icon{font-size:1.8rem;margin-bottom:8px}
+.feat-title{font-family:'Orbitron',monospace;font-size:.72rem;color:var(--neon);letter-spacing:1px;margin-bottom:5px}
+.feat-desc{color:var(--muted);font-size:.8rem;line-height:1.55}
+
+footer{text-align:center;padding:28px;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);position:relative;z-index:1}
+footer span{color:var(--neon)}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(2,8,17,.4);border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:600px){.input-row{flex-direction:column}.music-card-top{flex-direction:column}.music-cover,.music-cover-placeholder{width:100%;height:180px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">MUSIC<span>DOWN</span></div>
+  <div class="nav-badge">⚡ FRANK AI SOLUTIONS</div>
+</nav>
+
+<div class="hero">
+  <div class="hero-glow"></div>
+  <h1>Baixe Músicas &<br><span>Vídeos Online</span></h1>
+  <p>Pesquise por nome ou cole um link. Download em MP3 ou MP4 com prévia antes de baixar.</p>
+  <div class="platforms">
+    <div class="platform">▶️ YouTube</div>
+    <div class="platform">☁️ SoundCloud</div>
+    <div class="platform">📘 Facebook</div>
+    <div class="platform">📸 Instagram</div>
+    <div class="platform">🎵 TikTok</div>
+    <div class="platform">🐦 Twitter/X</div>
+    <div class="platform">+ 1000 sites</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- SEARCH BOX -->
+  <div class="search-box">
+    <div class="search-tabs">
+      <button class="search-tab active" onclick="switchTab('search',this)">🔍 Pesquisar por Nome</button>
+      <button class="search-tab" onclick="switchTab('url',this)">🔗 Colar Link</button>
+    </div>
+    <div id="searchMode">
+      <div class="input-row">
+        <input class="main-input" type="text" id="searchInput" placeholder="Ex: Burna Boy Last Last, Dj Ardiles..." onkeydown="if(event.key==='Enter')doSearch()">
+        <button class="btn-main" id="searchBtn" onclick="doSearch()">🔍 PESQUISAR</button>
+      </div>
+      <div class="search-results" id="searchResults"></div>
+    </div>
+    <div id="urlMode" style="display:none">
+      <div class="input-row">
+        <input class="main-input" type="text" id="urlInput" placeholder="Cole o link aqui... (YouTube, TikTok, Instagram...)" onkeydown="if(event.key==='Enter')fetchInfo()">
+        <button class="btn-main" id="fetchBtn" onclick="fetchInfo()">🔍 BUSCAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- MUSIC INFO CARD -->
+  <div class="music-card" id="musicCard"></div>
+
+  <!-- AUDIO PREVIEW -->
+  <div class="preview-box" id="previewBox">
+    <div class="preview-title">🎵 PRÉVIA DA MÚSICA</div>
+    <audio id="audioPreview" controls></audio>
+  </div>
+
+  <!-- FORMAT -->
+  <div id="formatSection" style="display:none">
+    <div style="font-size:.72rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">FORMATO</div>
+    <div class="format-row">
+      <div class="format-btn active" onclick="selectFormat('mp3',this)">🎵 MP3 — Só Áudio</div>
+      <div class="format-btn" onclick="selectFormat('mp4',this)">🎬 MP4 — Vídeo</div>
+    </div>
+    <div style="font-size:.72rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">QUALIDADE</div>
+    <div class="quality-row" id="qualityRow"></div>
+  </div>
+
+  <!-- DOWNLOAD BTN -->
+  <button class="btn-download" id="downloadBtn" onclick="startDownload()">⬇️ BAIXAR AGORA</button>
+
+  <!-- PROGRESS -->
+  <div class="progress-card" id="progressCard">
+    <div class="prog-header">
+      <div class="prog-title">⬇️ A BAIXAR...</div>
+      <div class="prog-pct" id="progPct">0%</div>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
+    <div class="prog-status" id="progStatus">A preparar...</div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-card" id="resultCard">
+    <div class="result-icon">✅</div>
+    <div class="result-title">DOWNLOAD CONCLUÍDO!</div>
+    <div class="result-sub">O seu ficheiro está pronto para guardar.</div>
+    <a id="saveLink" class="btn-save" download>💾 GUARDAR FICHEIRO</a>
+    <button class="btn-new" onclick="resetAll()">+ NOVO</button>
+  </div>
+
+</div>
+
+<!-- HISTORY -->
+<div class="history-section" id="historySection" style="display:none">
+  <div class="section-title">🕘 DOWNLOADS RECENTES</div>
+  <div class="history-grid" id="historyGrid"></div>
+</div>
+
+<!-- FEATURES -->
+<div class="features-section">
+  <div class="features-grid">
+    <div class="feat-card"><div class="feat-icon">🔍</div><div class="feat-title">PESQUISA DIRECTA</div><div class="feat-desc">Pesquise por nome sem precisar de copiar links.</div></div>
+    <div class="feat-card"><div class="feat-icon">🎵</div><div class="feat-title">PRÉVIA ANTES</div><div class="feat-desc">Ouça antes de baixar para confirmar a música certa.</div></div>
+    <div class="feat-card"><div class="feat-icon">📊</div><div class="feat-title">PROGRESSO REAL</div><div class="feat-desc">Acompanhe o download em tempo real com percentagem.</div></div>
+    <div class="feat-card"><div class="feat-icon">🖼️</div><div class="feat-title">CAPA DO ÁLBUM</div><div class="feat-desc">Veja a thumbnail da música ou vídeo antes de baixar.</div></div>
+    <div class="feat-card"><div class="feat-icon">⚡</div><div class="feat-title">ULTRA RÁPIDO</div><div class="feat-desc">Servidores optimizados para downloads em segundos.</div></div>
+    <div class="feat-card"><div class="feat-icon">🌍</div><div class="feat-title">1000+ SITES</div><div class="feat-desc">YouTube, TikTok, Instagram, Facebook e muito mais.</div></div>
+  </div>
+</div>
+
+<footer>© 2026 <span>Frank AI Solutions</span> · MusicDown · +258 870 611 757</footer>
+
+<script>
+const API = 'http://localhost:3001/api';
+let selectedFormat = 'mp3';
+let selectedQuality = 'best';
+let currentUrl = null;
+let currentInfo = null;
+let history = JSON.parse(localStorage.getItem('md_hist') || '[]');
+
+// ══ TABS ══
+function switchTab(t, el) {
+  document.querySelectorAll('.search-tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('searchMode').style.display = t === 'search' ? 'block' : 'none';
+  document.getElementById('urlMode').style.display = t === 'url' ? 'block' : 'none';
+  resetAll();
+}
+
+// ══ SEARCH ══
+async function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) { showError('Digite o nome da música!'); return; }
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>A pesquisar...';
+  hideResults();
+  try {
+    const res = await fetch(API + '/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q }) });
+    const data = await res.json();
+    if (data.error) { showError(data.error); return; }
+    renderSearchResults(data);
+  } catch(e) { showError('Erro de conexão! Servidor offline?'); }
+  finally { btn.disabled = false; btn.innerHTML = '🔍 PESQUISAR'; }
+}
+
+function renderSearchResults(results) {
+  const el = document.getElementById('searchResults');
+  if (!results.length) { el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">Sem resultados. Tente outra pesquisa.</div>'; el.classList.add('show'); return; }
+  el.innerHTML = results.map((r, i) => `
+    <div class="search-result-item" id="sr-${i}" onclick="selectResult('${r.url}',${i})">
+      <img class="sr-thumb" src="${r.thumbnail}" onerror="this.src=''" loading="lazy">
+      <div class="sr-info">
+        <div class="sr-title">${r.title}</div>
+        <div class="sr-meta">
+          <span>${r.uploader || ''}</span>
+          ${r.duration ? `<span>⏱ ${Math.floor(r.duration/60)}:${String(r.duration%60).padStart(2,'0')}</span>` : ''}
+          ${r.viewCount ? `<span class="sr-views">👁 ${formatViews(r.viewCount)}</span>` : ''}
+        </div>
+      </div>
+    </div>`).join('');
+  el.classList.add('show');
+}
+
+async function selectResult(url, idx) {
+  document.querySelectorAll('.search-result-item').forEach(el => el.classList.remove('selected'));
+  document.getElementById('sr-' + idx)?.classList.add('selected');
+  currentUrl = url;
+  await loadMusicInfo(url);
+}
+
+// ══ URL MODE ══
+async function fetchInfo() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) { showError('Cole um link válido!'); return; }
+  currentUrl = url;
+  const btn = document.getElementById('fetchBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>A buscar...';
+  await loadMusicInfo(url);
+  btn.disabled = false; btn.innerHTML = '🔍 BUSCAR';
+}
+
+// ══ LOAD INFO ══
+async function loadMusicInfo(url) {
+  hideResults();
+  try {
+    const res = await fetch(API + '/info', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
+    const data = await res.json();
+    if (data.error) { showError(data.error); return; }
+    currentInfo = data;
+    showMusicCard(data);
+    showFormatSection();
+    document.getElementById("downloadBtn").style.display = "block";
+  } catch(e) { showError('Erro de conexão!'); }
+}
+
+function showMusicCard(data) {
+  const dur = data.duration ? Math.floor(data.duration/60) + ':' + String(data.duration%60).padStart(2,'0') : '';
+  document.getElementById('musicCard').innerHTML = `
+    <div class="music-card-top">
+      ${data.thumbnail ? `<img class="music-cover" src="${data.thumbnail}" onerror="this.style.display='none'">` : '<div class="music-cover-placeholder">🎵</div>'}
+      <div style="flex:1;min-width:0">
+        <div class="music-title">${data.title || 'Sem título'}</div>
+        <div class="music-artist">${data.uploader || ''}</div>
+        <div class="music-tags">
+          ${data.platform ? `<span class="music-tag">${data.platform}</span>` : ''}
+          ${dur ? `<span class="music-tag">⏱ ${dur}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('musicCard').classList.add('show');
+
+  // Prévia de áudio via YouTube embed
+  if (currentUrl && currentUrl.includes('youtube')) {
+    const vidId = currentUrl.match(/(?:v=|youtu\.be\/)([^&?]+)/)?.[1];
+    if (vidId) {
+      const preview = document.getElementById('previewBox');
+      const audio = document.getElementById('audioPreview');
+      // Usar iframe para prévia
+      preview.innerHTML = `
+        <div class="preview-title">🎵 PRÉVIA</div>
+        <iframe width="100%" height="80" src="https://www.youtube.com/embed/${vidId}?autoplay=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope" style="border-radius:10px"></iframe>`;
+      preview.classList.add('show');
+    }
+  }
+}
+
+function showFormatSection() {
+  document.getElementById('formatSection').style.display = 'block';
+  selectFormat('mp3', document.querySelector('.format-btn.active'));
+}
+
+// ══ FORMAT & QUALITY ══
+function selectFormat(fmt, el) {
+  selectedFormat = fmt;
+  document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const qr = document.getElementById('qualityRow');
+  if (fmt === 'mp3') {
+    qr.innerHTML = `
+      <div class="quality-btn active" onclick="selQ('best',this)">🔥 320 kbps</div>
+      <div class="quality-btn" onclick="selQ('192',this)">✅ 192 kbps</div>
+      <div class="quality-btn" onclick="selQ('128',this)">📦 128 kbps</div>`;
+    selectedQuality = 'best';
+  } else {
+    qr.innerHTML = `
+      <div class="quality-btn active" onclick="selQ('best',this)">🔥 Melhor</div>
+      <div class="quality-btn" onclick="selQ('1080',this)">📺 1080p</div>
+      <div class="quality-btn" onclick="selQ('720',this)">🖥️ 720p</div>
+      <div class="quality-btn" onclick="selQ('480',this)">📱 480p</div>
+      <div class="quality-btn" onclick="selQ('360',this)">📦 360p</div>`;
+    selectedQuality = 'best';
+  }
+}
+
+function selQ(q, el) {
+  selectedQuality = q;
+  document.querySelectorAll('.quality-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ══ DOWNLOAD ══
+async function startDownload() {
+  if (!currentUrl) { showError('Seleccione uma música primeiro!'); return; }
+  const btn = document.getElementById('downloadBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>A preparar...';
+  document.getElementById('progressCard').classList.add('show');
+  document.getElementById('resultCard').classList.remove('show');
+
+  // Simular progresso enquanto aguarda
+  let fakeProgress = 0;
+  const fakeTimer = setInterval(() => {
+    fakeProgress = Math.min(fakeProgress + Math.random() * 8, 90);
+    updateProg(fakeProgress, 'A baixar...');
+  }, 800);
+
+  try {
+    updateProg(5, 'A iniciar download...');
+    const res = await fetch(API + '/download-simple', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: currentUrl, format: selectedFormat, quality: selectedQuality })
+    });
+    const data = await res.json();
+    clearInterval(fakeTimer);
+    if (data.error) { showError(data.error); return; }
+    updateProg(100, '✅ Concluído!');
+    showResult(data.url, data.filename);
+  } catch(e) {
+    clearInterval(fakeTimer);
+    showError('Erro no download: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '⬇️ BAIXAR NOVAMENTE';
+  }
+}
+
+function updateProg(pct, status) {
+  document.getElementById('progFill').style.width = Math.min(pct, 100) + '%';
+  document.getElementById('progPct').textContent = Math.round(pct) + '%';
+  document.getElementById('progStatus').textContent = status;
+}
+
+function showResult(fileUrl, filename) {
+  const link = document.getElementById('saveLink');
+  link.href = 'http://localhost:3001' + fileUrl;
+  link.download = filename;
+  document.getElementById('resultCard').classList.add('show');
+  saveHistory(currentInfo?.title || 'Download', currentInfo?.thumbnail || '', filename, selectedFormat);
+}
+
+// ══ HISTORY ══
+function saveHistory(title, thumb, filename, fmt) {
+  history.unshift({ title, thumb, filename, fmt, date: new Date().toLocaleString('pt') });
+  if (history.length > 12) history.pop();
+  localStorage.setItem('md_hist', JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  if (!history.length) return;
+  document.getElementById('historySection').style.display = 'block';
+  document.getElementById('historyGrid').innerHTML = history.map(h => `
+    <div class="history-item">
+      ${h.thumb ? `<img class="hi-thumb" src="${h.thumb}" onerror="this.style.display='none'" loading="lazy">` : '<div class="hi-thumb" style="background:linear-gradient(135deg,var(--dark2),var(--neon2));display:flex;align-items:center;justify-content:center;font-size:2rem">🎵</div>'}
+      <div class="hi-title">${h.fmt === 'mp3' ? '🎵' : '🎬'} ${h.title}</div>
+      <div class="hi-meta">${h.fmt.toUpperCase()} · ${h.date}</div>
+    </div>`).join('');
+}
+
+// ══ UTILS ══
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = '⚠️ ' + msg; el.classList.add('show');
+  document.getElementById('downloadBtn').disabled = false;
+  document.getElementById('downloadBtn').innerHTML = '⬇️ BAIXAR AGORA';
+  document.getElementById('progressCard').classList.remove('show');
+  setTimeout(() => el.classList.remove('show'), 5000);
+}
+function hideResults() {
+  document.getElementById('errorBox').classList.remove('show');
+  document.getElementById('musicCard').classList.remove('show');
+  document.getElementById('previewBox').classList.remove('show');
+  document.getElementById('formatSection').style.display = 'none';
+  document.getElementById('downloadBtn').classList.remove('show');
+  document.getElementById('progressCard').classList.remove('show');
+  document.getElementById('resultCard').classList.remove('show');
+}
+function resetAll() {
+  hideResults();
+  currentUrl = null; currentInfo = null;
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchResults').classList.remove('show');
+}
+function formatViews(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(0) + 'K';
+  return n;
+}
+
+renderHistory();
+</script>
+</body>
+</html>
