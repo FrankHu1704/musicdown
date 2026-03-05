@@ -251,7 +251,7 @@ footer span{color:var(--neon)}
 <footer>© 2026 <span>Frank AI Solutions</span> · MusicDown · +258 870 611 757</footer>
 
 <script>
-const API = 'http://localhost:3001/api';
+const API = 'https://musicdown.onrender.com/api';
 let selectedFormat = 'mp3';
 let selectedQuality = 'best';
 let currentUrl = null;
@@ -443,7 +443,7 @@ function updateProg(pct, status) {
 
 function showResult(fileUrl, filename) {
   const link = document.getElementById('saveLink');
-  link.href = 'http://localhost:3001' + fileUrl;
+  link.href = 'https://musicdown.onrender.com' + fileUrl;
   link.download = filename;
   document.getElementById('resultCard').classList.add('show');
   saveHistory(currentInfo?.title || 'Download', currentInfo?.thumbnail || '', filename, selectedFormat);
